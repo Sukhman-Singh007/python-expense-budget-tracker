@@ -1,11 +1,14 @@
+import math
 import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import database
 import expenses
 import budget
+import main
 
 
 class TrackerTests(unittest.TestCase):
@@ -44,6 +47,23 @@ class TrackerTests(unittest.TestCase):
         ))
         self.assertTrue(expenses.delete_expense(expense_id))
         self.assertEqual(len(expenses.list_expenses()), 0)
+
+    def test_rejects_non_finite_amounts(self):
+        for bad_amount in (math.nan, math.inf, -math.inf):
+            with self.assertRaises(ValueError):
+                expenses.add_expense(bad_amount, "Food", "Bad", "2026-09-30")
+            expense_id = expenses.add_expense(20, "Food", "OK", "2026-09-30")
+            with self.assertRaises(ValueError):
+                expenses.update_expense(
+                    expense_id, bad_amount, "Food", "Bad", "2026-09-30"
+                )
+            with self.assertRaises(ValueError):
+                budget.set_budget("2026-09", bad_amount)
+        self.assertEqual(len(expenses.list_expenses()), 3)
+
+    def test_read_amount_reprompts_on_non_finite(self):
+        with patch("builtins.input", side_effect=["nan", "inf", "-5", "12.5"]):
+            self.assertEqual(main.read_amount("Amount: $"), 12.5)
 
 
 if __name__ == "__main__":

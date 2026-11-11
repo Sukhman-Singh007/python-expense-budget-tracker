@@ -1,3 +1,4 @@
+import math
 from datetime import datetime
 from database import get_connection
 
@@ -8,8 +9,8 @@ def validate_month(month):
 
 def set_budget(month, amount):
     validate_month(month)
-    if amount <= 0:
-        raise ValueError("Budget must be positive.")
+    if not math.isfinite(amount) or amount <= 0:
+        raise ValueError("Budget must be a positive number.")
     with get_connection() as conn:
         conn.execute(
             """INSERT INTO budgets(month, amount) VALUES (?, ?)

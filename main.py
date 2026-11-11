@@ -1,3 +1,4 @@
+import math
 from datetime import datetime
 from database import initialize_database
 from expenses import add_expense, list_expenses, update_expense, delete_expense, filtered_expenses
@@ -12,7 +13,7 @@ def read_amount(prompt):
     while True:
         try:
             value = float(input(prompt))
-            if value <= 0:
+            if not math.isfinite(value) or value <= 0:
                 raise ValueError
             return round(value, 2)
         except ValueError:

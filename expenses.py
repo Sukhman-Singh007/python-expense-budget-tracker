@@ -1,5 +1,11 @@
+import math
 from datetime import datetime
 from database import get_connection
+
+
+def validate_amount(amount):
+    if not math.isfinite(amount) or amount <= 0:
+        raise ValueError("Amount must be a positive number.")
 
 
 def validate_date(value):
@@ -7,8 +13,7 @@ def validate_date(value):
 
 
 def add_expense(amount, category, description, expense_date):
-    if amount <= 0:
-        raise ValueError("Amount must be positive.")
+    validate_amount(amount)
     validate_date(expense_date)
     with get_connection() as conn:
         cursor = conn.execute(
@@ -42,8 +47,7 @@ def filtered_expenses(category=None, month=None):
 
 
 def update_expense(expense_id, amount, category, description, expense_date):
-    if amount <= 0:
-        raise ValueError("Amount must be positive.")
+    validate_amount(amount)
     validate_date(expense_date)
     with get_connection() as conn:
         cursor = conn.execute(
