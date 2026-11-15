@@ -1,5 +1,6 @@
 import math
 from datetime import datetime
+from budget import normalize_month
 from database import get_connection
 
 
@@ -8,13 +9,22 @@ def validate_amount(amount):
         raise ValueError("Amount must be a positive number.")
 
 
+def normalize_date(value):
+    """Parse a YYYY-M-D date and return it zero-padded (YYYY-MM-DD).
+
+    strptime accepts "2026-9-5", but month filters compare against the
+    zero-padded prefix, so an unpadded date was stored yet never matched.
+    """
+    return datetime.strptime(value, "%Y-%m-%d").strftime("%Y-%m-%d")
+
+
 def validate_date(value):
-    datetime.strptime(value, "%Y-%m-%d")
+    normalize_date(value)
 
 
 def add_expense(amount, category, description, expense_date):
     validate_amount(amount)
-    validate_date(expense_date)
+    expense_date = normalize_date(expense_date)
     with get_connection() as conn:
         cursor = conn.execute(
             """INSERT INTO expenses(amount, category, description, expense_date)
@@ -38,7 +48,7 @@ def filtered_expenses(category=None, month=None):
         query += " AND LOWER(category) = LOWER(?)"
         params.append(category)
     if month:
-        datetime.strptime(month, "%Y-%m")
+        month = normalize_month(month)
         query += " AND substr(expense_date, 1, 7) = ?"
         params.append(month)
     query += " ORDER BY expense_date DESC, id DESC"
@@ -48,7 +58,7 @@ def filtered_expenses(category=None, month=None):
 
 def update_expense(expense_id, amount, category, description, expense_date):
     validate_amount(amount)
-    validate_date(expense_date)
+    expense_date = normalize_date(expense_date)
     with get_connection() as conn:
         cursor = conn.execute(
             """UPDATE expenses

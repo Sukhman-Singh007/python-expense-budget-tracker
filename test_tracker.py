@@ -48,6 +48,22 @@ class TrackerTests(unittest.TestCase):
         self.assertTrue(expenses.delete_expense(expense_id))
         self.assertEqual(len(expenses.list_expenses()), 0)
 
+    def test_unpadded_month_is_normalized(self):
+        expenses.add_expense(80, "Food", "Groceries", "2026-09-10")
+        budget.set_budget("2026-9", 200)
+        self.assertEqual(len(expenses.filtered_expenses(None, "2026-9")), 1)
+        self.assertEqual(budget.monthly_summary("2026-9")["count"], 1)
+        status = budget.budget_status("2026-09")
+        self.assertEqual(status["budget"], 200)
+        self.assertEqual(status["spent"], 80)
+
+    def test_unpadded_date_is_stored_zero_padded(self):
+        expense_id = expenses.add_expense(15, "Food", "Snack", "2026-9-5")
+        rows = expenses.list_expenses()
+        self.assertEqual(rows[0]["id"], expense_id)
+        self.assertEqual(rows[0]["expense_date"], "2026-09-05")
+        self.assertEqual(len(expenses.filtered_expenses(None, "2026-09")), 1)
+
     def test_rejects_non_finite_amounts(self):
         for bad_amount in (math.nan, math.inf, -math.inf):
             with self.assertRaises(ValueError):
