@@ -44,10 +44,10 @@ def category_summary(month):
     month = normalize_month(month)
     with get_connection() as conn:
         return conn.execute(
-            """SELECT category, ROUND(SUM(amount), 2) AS total
+            """SELECT MIN(category) AS category, ROUND(SUM(amount), 2) AS total
                FROM expenses
                WHERE substr(expense_date, 1, 7)=?
-               GROUP BY category
+               GROUP BY LOWER(category)
                ORDER BY total DESC""",
             (month,),
         ).fetchall()

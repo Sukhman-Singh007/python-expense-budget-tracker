@@ -77,6 +77,19 @@ class TrackerTests(unittest.TestCase):
                 budget.set_budget("2026-09", bad_amount)
         self.assertEqual(len(expenses.list_expenses()), 3)
 
+    def test_category_summary_groups_case_insensitively(self):
+        # "Food", "food" and "FOOD" are one category when filtering, so the
+        # monthly summary must not split them into three separate rows.
+        expenses.add_expense(10, "Food", "Lunch", "2026-09-10")
+        expenses.add_expense(20, "food", "Dinner", "2026-09-11")
+        expenses.add_expense(5, "FOOD", "Snack", "2026-09-12")
+        expenses.add_expense(7, "Gas", "Fuel", "2026-09-13")
+        rows = budget.category_summary("2026-09")
+        self.assertEqual(len(rows), 2)
+        food = [r for r in rows if r["category"].lower() == "food"]
+        self.assertEqual(len(food), 1)
+        self.assertEqual(food[0]["total"], 35)
+
     def test_read_amount_reprompts_on_non_finite(self):
         with patch("builtins.input", side_effect=["nan", "inf", "-5", "12.5"]):
             self.assertEqual(main.read_amount("Amount: $"), 12.5)
