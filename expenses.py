@@ -34,6 +34,13 @@ def add_expense(amount, category, description, expense_date):
         return cursor.lastrowid
 
 
+def get_expense(expense_id):
+    with get_connection() as conn:
+        return conn.execute(
+            "SELECT * FROM expenses WHERE id=?", (expense_id,)
+        ).fetchone()
+
+
 def list_expenses():
     with get_connection() as conn:
         return conn.execute(

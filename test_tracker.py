@@ -94,6 +94,37 @@ class TrackerTests(unittest.TestCase):
         with patch("builtins.input", side_effect=["nan", "inf", "-5", "12.5"]):
             self.assertEqual(main.read_amount("Amount: $"), 12.5)
 
+    def test_read_date_returns_default_on_empty_input(self):
+        with patch("builtins.input", return_value=""):
+            self.assertEqual(
+                main.read_date("Date: ", default="2026-09-01"), "2026-09-01"
+            )
+        with patch("builtins.input", return_value="2026-09-02"):
+            self.assertEqual(
+                main.read_date("Date: ", default="2026-09-01"), "2026-09-02"
+            )
+
+    def test_update_flow_keeps_original_date_on_empty_input(self):
+        # Pressing Enter for the date while editing must keep the
+        # expense's date — not silently rewrite it to today.
+        expense_id = expenses.add_expense(20, "Food", "Lunch", "2026-09-01")
+        with patch(
+            "builtins.input",
+            side_effect=[str(expense_id), "25", "Food", "Updated", ""],
+        ):
+            main.update_flow()
+        rows = expenses.list_expenses()
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["amount"], 25)
+        self.assertEqual(rows[0]["expense_date"], "2026-09-01")
+
+    def test_update_flow_reports_unknown_id_before_prompting(self):
+        # An unknown ID is reported up front instead of asking for
+        # all the new values first.
+        with patch("builtins.input", side_effect=["999"]):
+            main.update_flow()
+        self.assertEqual(len(expenses.list_expenses()), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

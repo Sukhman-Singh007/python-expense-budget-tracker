@@ -1,7 +1,7 @@
 import math
 from datetime import datetime
 from database import initialize_database
-from expenses import add_expense, list_expenses, update_expense, delete_expense, filtered_expenses
+from expenses import add_expense, get_expense, list_expenses, update_expense, delete_expense, filtered_expenses
 from budget import set_budget, monthly_summary, category_summary, budget_status
 
 
@@ -20,10 +20,13 @@ def read_amount(prompt):
             print("Please enter a positive number.")
 
 
-def read_date(prompt="Date (YYYY-MM-DD, Enter for today): "):
+def read_date(prompt="Date (YYYY-MM-DD, Enter for today): ", default=None):
     while True:
         value = input(prompt).strip()
         if not value:
+            # Editing keeps the existing date; adding defaults to today.
+            if default is not None:
+                return default
             return datetime.now().strftime("%Y-%m-%d")
         try:
             datetime.strptime(value, "%Y-%m-%d")
@@ -67,10 +70,17 @@ def update_flow():
     except ValueError:
         print("Invalid ID.")
         return
+    expense = get_expense(expense_id)
+    if expense is None:
+        print("Expense ID not found.")
+        return
     amount = read_amount("New amount: $")
     category = input("New category: ").strip() or "Other"
     description = input("New description: ").strip()
-    expense_date = read_date("New date (YYYY-MM-DD, Enter for today): ")
+    expense_date = read_date(
+        f"New date (YYYY-MM-DD, Enter to keep {expense['expense_date']}): ",
+        default=expense["expense_date"],
+    )
     if update_expense(expense_id, amount, category, description, expense_date):
         print("Expense updated.")
     else:
