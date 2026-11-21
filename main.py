@@ -75,8 +75,17 @@ def update_flow():
         print("Expense ID not found.")
         return
     amount = read_amount("New amount: $")
-    category = input("New category: ").strip() or "Other"
-    description = input("New description: ").strip()
+    # Enter keeps the existing value — it used to rewrite the
+    # category to "Other" and wipe the description (same class of
+    # bug as the date being rewritten to today, fixed 2026-11-18).
+    category = (
+        input(f"New category (Enter to keep {expense['category']}): ").strip()
+        or expense["category"]
+    )
+    description = (
+        input("New description (Enter to keep current): ").strip()
+        or expense["description"]
+    )
     expense_date = read_date(
         f"New date (YYYY-MM-DD, Enter to keep {expense['expense_date']}): ",
         default=expense["expense_date"],

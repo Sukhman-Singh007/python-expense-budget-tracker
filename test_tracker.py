@@ -118,6 +118,23 @@ class TrackerTests(unittest.TestCase):
         self.assertEqual(rows[0]["amount"], 25)
         self.assertEqual(rows[0]["expense_date"], "2026-09-01")
 
+    def test_update_flow_keeps_category_and_description_on_empty_input(self):
+        # Pressing Enter for category/description while editing must
+        # keep the old values — it used to rewrite the category to
+        # "Other" and wipe the description to "".
+        expense_id = expenses.add_expense(20, "Food", "Lunch", "2026-09-01")
+        with patch(
+            "builtins.input",
+            side_effect=[str(expense_id), "25", "", "", ""],
+        ):
+            main.update_flow()
+        rows = expenses.list_expenses()
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["amount"], 25)
+        self.assertEqual(rows[0]["category"], "Food")
+        self.assertEqual(rows[0]["description"], "Lunch")
+        self.assertEqual(rows[0]["expense_date"], "2026-09-01")
+
     def test_update_flow_reports_unknown_id_before_prompting(self):
         # An unknown ID is reported up front instead of asking for
         # all the new values first.
