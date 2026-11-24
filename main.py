@@ -9,10 +9,17 @@ def money(value):
     return f"${value:,.2f}"
 
 
-def read_amount(prompt):
+def read_amount(prompt, default=None):
     while True:
         try:
-            value = float(input(prompt))
+            value = input(prompt).strip()
+            if not value:
+                # Editing keeps the existing amount; adding has no
+                # default, so an empty answer keeps prompting.
+                if default is not None:
+                    return default
+                raise ValueError
+            value = float(value)
             if not math.isfinite(value) or value <= 0:
                 raise ValueError
             return round(value, 2)
@@ -74,7 +81,10 @@ def update_flow():
     if expense is None:
         print("Expense ID not found.")
         return
-    amount = read_amount("New amount: $")
+    amount = read_amount(
+        f"New amount (Enter to keep {money(expense['amount'])}): $",
+        default=expense["amount"],
+    )
     # Enter keeps the existing value — it used to rewrite the
     # category to "Other" and wipe the description (same class of
     # bug as the date being rewritten to today, fixed 2026-11-18).

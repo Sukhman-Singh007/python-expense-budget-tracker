@@ -135,6 +135,29 @@ class TrackerTests(unittest.TestCase):
         self.assertEqual(rows[0]["description"], "Lunch")
         self.assertEqual(rows[0]["expense_date"], "2026-09-01")
 
+    def test_read_amount_returns_default_on_empty_input(self):
+        with patch("builtins.input", return_value=""):
+            self.assertEqual(main.read_amount("Amount: $", default=20.0), 20.0)
+        with patch("builtins.input", return_value="12.5"):
+            self.assertEqual(main.read_amount("Amount: $", default=20.0), 12.5)
+
+    def test_update_flow_keeps_amount_on_empty_input(self):
+        # Pressing Enter for the amount while editing must keep the
+        # expense's amount — it used to loop forever asking for a
+        # positive number, with no way to keep the current value.
+        expense_id = expenses.add_expense(20, "Food", "Lunch", "2026-09-01")
+        with patch(
+            "builtins.input",
+            side_effect=[str(expense_id), "", "", "", ""],
+        ):
+            main.update_flow()
+        rows = expenses.list_expenses()
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["amount"], 20)
+        self.assertEqual(rows[0]["category"], "Food")
+        self.assertEqual(rows[0]["description"], "Lunch")
+        self.assertEqual(rows[0]["expense_date"], "2026-09-01")
+
     def test_update_flow_reports_unknown_id_before_prompting(self):
         # An unknown ID is reported up front instead of asking for
         # all the new values first.
