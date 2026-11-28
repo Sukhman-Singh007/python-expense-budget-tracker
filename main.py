@@ -1,5 +1,6 @@
 import math
 from datetime import datetime
+from decimal import Decimal, ROUND_HALF_UP
 from database import initialize_database
 from expenses import add_expense, get_expense, list_expenses, update_expense, delete_expense, filtered_expenses
 from budget import set_budget, monthly_summary, category_summary, budget_status, normalize_month
@@ -22,7 +23,14 @@ def read_amount(prompt, default=None):
             value = float(value)
             if not math.isfinite(value) or value <= 0:
                 raise ValueError
-            return round(value, 2)
+            # Round decimally, not on the binary float: round(2.675, 2)
+            # is 2.67 because 2.675 is stored as 2.67499..., so the
+            # tracker used to record a cent less than the user typed.
+            return float(
+                Decimal(str(value)).quantize(
+                    Decimal("0.01"), rounding=ROUND_HALF_UP
+                )
+            )
         except ValueError:
             print("Please enter a positive number.")
 

@@ -192,6 +192,15 @@ class TrackerTests(unittest.TestCase):
         with patch("builtins.input", side_effect=["abc", "2026-09"]):
             main.summary_flow()
 
+    def test_read_amount_rounds_half_cents_up(self):
+        # Amounts are money, not binary floats: round(2.675, 2) is
+        # 2.67 because 2.675 is stored as 2.67499..., so the tracker
+        # silently recorded a cent less than the user typed.
+        for typed, expected in (("2.675", 2.68), ("1.005", 1.01),
+                                ("10.005", 10.01), ("12.345", 12.35)):
+            with patch("builtins.input", return_value=typed):
+                self.assertEqual(main.read_amount("Amount: $"), expected)
+
 
 if __name__ == "__main__":
     unittest.main()
