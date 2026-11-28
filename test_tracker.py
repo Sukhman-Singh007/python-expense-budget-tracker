@@ -165,6 +165,33 @@ class TrackerTests(unittest.TestCase):
             main.update_flow()
         self.assertEqual(len(expenses.list_expenses()), 0)
 
+    def test_read_month_reprompts_on_invalid_input(self):
+        # A bad month used to raise a raw ValueError ("time data 'abc'
+        # does not match format '%Y-%m'") that the main loop printed
+        # as a cryptic "Error:" line. Like read_date, it now
+        # re-prompts until the month parses.
+        with patch(
+            "builtins.input", side_effect=["abc", "2026-13", "2026-9"]
+        ):
+            self.assertEqual(main.read_month("Month: "), "2026-09")
+
+    def test_read_month_empty_input_means_current_month(self):
+        # Enter for the month means the current month, like Enter for
+        # the date means today.
+        from datetime import datetime
+
+        with patch("builtins.input", return_value=""):
+            self.assertEqual(
+                main.read_month("Month: "),
+                datetime.now().strftime("%Y-%m"),
+            )
+
+    def test_summary_flow_reprompts_on_bad_month(self):
+        # The monthly summary used to die on a bad month with the raw
+        # strptime error; it now asks again and shows the summary.
+        with patch("builtins.input", side_effect=["abc", "2026-09"]):
+            main.summary_flow()
+
 
 if __name__ == "__main__":
     unittest.main()

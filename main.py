@@ -2,7 +2,7 @@ import math
 from datetime import datetime
 from database import initialize_database
 from expenses import add_expense, get_expense, list_expenses, update_expense, delete_expense, filtered_expenses
-from budget import set_budget, monthly_summary, category_summary, budget_status
+from budget import set_budget, monthly_summary, category_summary, budget_status, normalize_month
 
 
 def money(value):
@@ -40,6 +40,19 @@ def read_date(prompt="Date (YYYY-MM-DD, Enter for today): ", default=None):
             return value
         except ValueError:
             print("Use YYYY-MM-DD format.")
+
+
+def read_month(prompt="Month (YYYY-MM): "):
+    while True:
+        value = input(prompt).strip()
+        if not value:
+            # Enter means the current month, like read_date's Enter
+            # for today.
+            return datetime.now().strftime("%Y-%m")
+        try:
+            return normalize_month(value)
+        except ValueError:
+            print("Use YYYY-MM format.")
 
 
 def show_rows(rows):
@@ -121,7 +134,7 @@ def delete_flow():
 
 
 def summary_flow():
-    month = input("Month (YYYY-MM): ").strip()
+    month = read_month()
     summary = monthly_summary(month)
     print(f"\n--- Summary for {month} ---")
     print(f"Transactions: {summary['count']}")
@@ -135,14 +148,14 @@ def summary_flow():
 
 
 def budget_flow():
-    month = input("Month (YYYY-MM): ").strip()
+    month = read_month()
     amount = read_amount("Monthly budget: $")
     set_budget(month, amount)
     print("Budget saved.")
 
 
 def status_flow():
-    month = input("Month (YYYY-MM): ").strip()
+    month = read_month()
     status = budget_status(month)
     if status["budget"] is None:
         print("No budget set for that month.")
